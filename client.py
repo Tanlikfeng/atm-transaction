@@ -1,80 +1,58 @@
+import asyncio
 import grpc
-import atm_pb2
-import atm_pb2_grpc
-import pymongo
-import random
 import json
 import time
-import logging
-import datetime
-import asyncio
+import atm_pb2
+import atm_pb2_grpc
 
-# 建立與gRPC服務器的通道
-# channel = grpc.insecure_channel('localhost:50051')
-
-# 建立gRPC客戶端
-# stub = atm_pb2_grpc.BankServiceStub(channel)
-
-count = 0
-
-
-async def trans(item, start):
-    async with grpc.aio.insecure_channel('localhost:50051') as channel:
-        stub = atm_pb2_grpc.BankServiceStub(channel)
-
-        # 将JSON数据转换为protobuf消息对象
-        request = atm_pb2.TransferRequest()
-        # print(request)
-
-        request.from_account_id = item['from_account_id']
-        request.to_account_id = item['to_account_id']
-        request.amount = count
-
-        response = await stub.Transfer(request)
-        # future = stub.Transfer.future(request)
-        # response = future
-        # await asyncio.sleep(5)
-        # feature = response.result()
-        print(response)
-        # if feature.success:
-        #     print('success')
-        #     print(datetime.datetime.now() - start)
-        #     # count += 1
-        # else:
-        #     print('Unsuccess')
-        #     print(datetime.datetime.now() - start)
-        #     # count += 1
-
-        if response.success:
-            print('Success')
-            print(datetime.datetime.now() - start)
-        else:
-            print('Unsuccess')
-            print(datetime.datetime.now() - start)
-
-
-async def run(data):
-    # for i in range(0, len(data), 5):
-    start = datetime.datetime.now()
-    asyncio.run(trans(data, start))
-    end = datetime.datetime.now()
-    # print(count / (end - start).microseconds)
-
-
-if __name__ == '__main__':
-    logging.basicConfig()
-
-    # 讀取交易紀錄 JSON 文件
-    with open("transactions.json", "r") as f:
+async def send_transactions(stub):
+    with open('transactions.json') as f:
         transactions = json.load(f)
 
-    # print(type(transactions))
+    start_time = time.time()
+    total_transactions = len(transactions)
+    batch_size =1000  # 每批发送的交易数量
 
-    # 把交易记录 JSON 文件传到 run function
-    start = datetime.datetime.now()
-    for json_data in transactions:
-        asyncio.run(trans(json_data, datetime.datetime.now()))
-        count += 1
-    #     # break
-    asyncio.run(run(transactions))
-    print(datetime.datetime.now() - start)
+    count = 0
+    
+    for i in range(0, total_transactions, batch_size):
+        if(i != 0 ):
+            time.sleep(1)
+        batch = transactions[i:i+batch_size]
+        requests = []
+        
+        # for i, transaction in enumerate(transactions, 1):
+        for transaction in batch:
+            from_id = transaction['from_account_id']
+            to_id = transaction['to_account_id']
+            amount = transaction['amount']
+
+            request = atm_pb2.TransferRequest(
+                from_account_id=from_id,
+                to_account_id=to_id,
+                amount=amount
+            )
+            requests.append(request)
+
+        responses = await asyncio.gather(*[stub.Transfer(request) for request in requests])
+        count += len(responses)
+            # response = await stub.Transfer(request)
+            # print(f"Received response: {response.message}")
+            
+            # if i % 1000 == 0:
+            #     elapsed_time = time.time() - start_time
+            #     transactions_per_second = i / elapsed_time
+                # print(f"Processed {i}/{total_transactions} transactions. Transactions per second: {transactions_per_second:.2f}")
+        print(i)
+    elapsed_time = time.time() - start_time
+    # print(elapsed_time)
+    print(f"transactions per second : {count / elapsed_time}")
+
+async def main():
+    channel = grpc.aio.insecure_channel('localhost:50051')
+    stub = atm_pb2_grpc.BankServiceStub(channel)
+
+    await send_transactions(stub)
+
+if __name__ == '__main__':
+    asyncio.run(main())
