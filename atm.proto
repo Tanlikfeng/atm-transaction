@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message TransferRequest {
+  int32 from_account_id = 1;
+  int32 to_account_id = 2;
+  int64 amount = 3;
+}
+
+message TransferResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service BankService {
+  rpc Transfer(TransferRequest) returns (TransferResponse) {}
+}
+
+// python -m grpc_tools.protoc -I../../protos --python_out=. --pyi_out=. --grpc_python_out=. ../../protos/atm.proto
