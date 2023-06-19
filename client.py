@@ -4,25 +4,23 @@ import json
 import time
 import atm_pb2
 import atm_pb2_grpc
+import logging
 
 
 async def send_transactions(stub_A, stub_B):
     with open("transactions.json") as f:
         transactions = json.load(f)
 
-    start_time = time.time()
     total_transactions = len(transactions)
-    batch_size = 300  # 每批发送的交易数量
+    batch_size = 1000  # 每批发送的交易数量
+    batch = []
+    # count = 0
 
-    count = 0
-
+    start_time = time.time()
     for i in range(0, total_transactions, batch_size):
-        if i != 0:
-            time.sleep(1)
         batch = transactions[i : i + batch_size]
         requests = []
 
-        # for i, transaction in enumerate(transactions, 1):
         for transaction in batch:
             from_id = transaction["from_account_id"]
             to_id = transaction["to_account_id"]
@@ -33,26 +31,26 @@ async def send_transactions(stub_A, stub_B):
             )
             requests.append(request)
 
+        # python asyncio.gather是可以同時放入多個 coroutine
+        # "*"將每一個coroutine object傳給asyncio.gather()
         responses_A = await asyncio.gather(
             *[stub_A.Transfer(request) for request in requests]
         )
-        count += len(responses_A)
+        logging.info(f"Received response from server response_A: {responses_A}")
 
-        responses_B = await asyncio.gather(
-            *[stub_B.Transfer(request) for request in requests]
-        )
-        count += len(responses_B)
-        # response = await stub.Transfer(request)
-        # print(f"Received response: {response.message}")
+        # 統計成功執行的requests數量
+        # count += len(responses_A)
 
-        # if i % 1000 == 0:
-        #     elapsed_time = time.time() - start_time
-        #     transactions_per_second = i / elapsed_time
-        # print(f"Processed {i}/{total_transactions} transactions. Transactions per second: {transactions_per_second:.2f}")
-        print(i)
-    elapsed_time = time.time() - start_time
-    # print(elapsed_time)
-    print(f"transactions per second : {count / elapsed_time}")
+        # responses_B = await asyncio.gather(
+        #     *[stub_B.Transfer(request) for request in requests]
+        # )
+        # logging.info(f"Received response from server response_B: {responses_B}")
+        # count += len(responses_B)
+
+        # print(i)
+
+    t = time.time() - start_time
+    print(t)
 
 
 async def main():
@@ -66,4 +64,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, filename="client.log", filemode="w")
     asyncio.run(main())

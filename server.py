@@ -3,6 +3,7 @@ import grpc
 import atm_pb2
 import atm_pb2_grpc
 import datetime
+import logging
 
 from concurrent import futures
 from pymongo import MongoClient
@@ -20,12 +21,13 @@ class BankService(atm_pb2_grpc.BankServiceServicer):
         self.accounts_B = self.db_B["accounts"]
 
     async def Transfer(self, request, context):
-        print(datetime.datetime.now())
-        print(request)
+        await asyncio.sleep(1)
 
         from_id = request.from_account_id
         to_id = request.to_account_id
         amount = request.amount
+
+        logging.info(f"Received request from client: {from_id, to_id, amount}")
 
         # check id whether exist or not
         from_id_exists = self.accounts_A.find_one({"_id": from_id}) is not None
@@ -40,8 +42,6 @@ class BankService(atm_pb2_grpc.BankServiceServicer):
         # check balance
         if from_balance < amount:
             return atm_pb2.TransferResponse(success=False, message="Transaction failed")
-
-        # to_account = self.collection.find_one({'_id': to_id})
 
         # do transaction
         self.accounts_A.update_one({"_id": from_id}, {"$inc": {"balance": -amount}})
@@ -59,9 +59,11 @@ async def serve():
     atm_pb2_grpc.add_BankServiceServicer_to_server(BankService(), server)
     server.add_insecure_port("[::]:50051")
     await server.start()
-    print("Server started on port 50051")
+    logging.info("Server started on port 50051")
+    # print("Server started on port 50051")
     await server.wait_for_termination()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, filename="server.log", filemode="w")
     asyncio.run(serve())
