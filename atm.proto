@@ -15,4 +15,5 @@ service BankService {
   rpc Transfer(TransferRequest) returns (TransferResponse) {}
 }
 
-// python -m grpc_tools.protoc -I../../protos --python_out=. --pyi_out=. --grpc_python_out=. ../../protos/atm.proto
+// python -m grpc_tools.protoc -I../../protos --python_out=. --pyi_out=.
+// --grpc_python_out=. ../../protos/atm.proto

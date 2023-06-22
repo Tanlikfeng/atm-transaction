@@ -4,6 +4,7 @@ import json
 import time
 import atm_pb2
 import atm_pb2_grpc
+import logging
 
 
 # async def send_transactions(stub_A, stub_B):
@@ -17,12 +18,9 @@ async def send_transactions(stub_A):
 
     start = time.time()
     for i in range(0, total_transactions, batch_size):
-        if i != 0:
-            time.sleep(1)
         batch = transactions[i : i + batch_size]
         requests = []
 
-        # for i, transaction in enumerate(transactions, 1):
         for transaction in batch:
             from_id = transaction["from_account_id"]
             to_id = transaction["to_account_id"]
@@ -33,10 +31,12 @@ async def send_transactions(stub_A):
             )
             requests.append(request)
 
+        # python asyncio.gather是可以同時放入多個 coroutine
+        # "*"將每一個coroutine object傳給asyncio.gather()
         responses_A = await asyncio.gather(
             *[stub_A.Transfer(request) for request in requests]
         )
-        count += len(responses_A)
+        logging.info(f"Received response from server response_A: {responses_A}")
 
         # responses_B = await asyncio.gather(
         #     *[stub_B.Transfer(request) for request in requests]
@@ -65,4 +65,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, filename="client.log", filemode="w")
     asyncio.run(main())
