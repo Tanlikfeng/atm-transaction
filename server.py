@@ -3,6 +3,7 @@ import grpc
 import atm_pb2
 import atm_pb2_grpc
 import datetime
+import logging
 
 from concurrent import futures
 from pymongo import MongoClient
@@ -59,7 +60,7 @@ async def serve():
     atm_pb2_grpc.add_BankServiceServicer_to_server(BankService(), server)
     server.add_insecure_port("[::]:50051")
     await server.start()
-    print("Server started on port 50051")
+    logging.info("Server started on port 50051")
     await server.wait_for_termination()
 
 
