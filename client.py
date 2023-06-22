@@ -7,16 +7,16 @@ import atm_pb2_grpc
 import logging
 
 
-async def send_transactions(stub_A, stub_B):
+# async def send_transactions(stub_A, stub_B):
+async def send_transactions(stub_A):
     with open("transactions.json") as f:
         transactions = json.load(f)
 
     total_transactions = len(transactions)
-    batch_size = 1000  # 每批发送的交易数量
+    batch_size = 100000  # 每批发送的交易数量
     batch = []
-    # count = 0
 
-    start_time = time.time()
+    start = time.time()
     for i in range(0, total_transactions, batch_size):
         batch = transactions[i : i + batch_size]
         requests = []
@@ -38,9 +38,6 @@ async def send_transactions(stub_A, stub_B):
         )
         logging.info(f"Received response from server response_A: {responses_A}")
 
-        # 統計成功執行的requests數量
-        # count += len(responses_A)
-
         # responses_B = await asyncio.gather(
         #     *[stub_B.Transfer(request) for request in requests]
         # )
@@ -49,18 +46,22 @@ async def send_transactions(stub_A, stub_B):
 
         # print(i)
 
-    t = time.time() - start_time
-    print(t)
+    end = time.time()
+    print(end - start)
+    print(batch_size)
+    tps = batch_size / (end - start)
+    print(tps)
 
 
 async def main():
     channel_A = grpc.aio.insecure_channel("localhost:50051")
     stub_A = atm_pb2_grpc.BankServiceStub(channel_A)
 
-    channel_B = grpc.aio.insecure_channel("localhost:50051")
-    stub_B = atm_pb2_grpc.BankServiceStub(channel_B)
+    # channel_B = grpc.aio.insecure_channel("localhost:50051")
+    # stub_B = atm_pb2_grpc.BankServiceStub(channel_B)
 
-    await send_transactions(stub_A, stub_B)
+    # await send_transactions(stub_A, stub_B)
+    await send_transactions(stub_A)
 
 
 if __name__ == "__main__":

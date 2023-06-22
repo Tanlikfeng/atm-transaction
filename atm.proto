@@ -7,7 +7,7 @@ message TransferRequest {
 }
 
 message TransferResponse {
-  // bool success = 1;
+  bool success = 1;
   string message = 2;
 }
 

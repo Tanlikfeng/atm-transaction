@@ -21,7 +21,7 @@ class BankService(atm_pb2_grpc.BankServiceServicer):
         self.accounts_B = self.db_B["accounts"]
 
     async def Transfer(self, request, context):
-        await asyncio.sleep(1)
+        # await asyncio.sleep(1)
 
         from_id = request.from_account_id
         to_id = request.to_account_id
@@ -60,7 +60,6 @@ async def serve():
     server.add_insecure_port("[::]:50051")
     await server.start()
     logging.info("Server started on port 50051")
-    # print("Server started on port 50051")
     await server.wait_for_termination()
 
 
