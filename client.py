@@ -7,7 +7,6 @@ import atm_pb2_grpc
 import logging
 
 
-# async def send_transactions(stub_A, stub_B):
 async def send_transactions(stub_A):
     with open("transactions.json") as f:
         transactions = json.load(f)
@@ -31,20 +30,13 @@ async def send_transactions(stub_A):
             )
             requests.append(request)
 
+            # print(requests)
         # python asyncio.gather是可以同時放入多個 coroutine
         # "*"將每一個coroutine object傳給asyncio.gather()
         responses_A = await asyncio.gather(
             *[stub_A.Transfer(request) for request in requests]
         )
         logging.info(f"Received response from server response_A: {responses_A}")
-
-        # responses_B = await asyncio.gather(
-        #     *[stub_B.Transfer(request) for request in requests]
-        # )
-        # logging.info(f"Received response from server response_B: {responses_B}")
-        # count += len(responses_B)
-
-        # print(i)
 
     end = time.time()
     print(end - start)
@@ -57,10 +49,6 @@ async def main():
     channel_A = grpc.aio.insecure_channel("localhost:50051")
     stub_A = atm_pb2_grpc.BankServiceStub(channel_A)
 
-    # channel_B = grpc.aio.insecure_channel("localhost:50051")
-    # stub_B = atm_pb2_grpc.BankServiceStub(channel_B)
-
-    # await send_transactions(stub_A, stub_B)
     await send_transactions(stub_A)
 
 
